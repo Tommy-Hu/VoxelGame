@@ -236,7 +236,7 @@ public static class ChunkGenerator
     {
         float normalizedNoise = Noise2D(x, z);
         float mappedNoise = normalizedNoise * SurfaceThickness;
-        return CavesThickness + caveGenerationMin + mappedNoise;
+        return surfaceGenerationMin + mappedNoise;
     }
     public static Block GetBlock(Vector2 offset, float x, float y, float z, float maxSurfaceBlockHeight)
     {

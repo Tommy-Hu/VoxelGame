@@ -8,6 +8,8 @@ public class FPController : MonoBehaviour
 {
     public float walkingSpeed = 7.5f;
     public float runningSpeed = 11.5f;
+    public float sideSpeedMultiplier = 0.75f;
+    public float backwardsSpeedMultiplier = 0.70f;
     public float jumpSpeed = 8.0f;
     public float gravity = 20.0f;
     public Camera playerCamera;
@@ -37,12 +39,14 @@ public class FPController : MonoBehaviour
         Vector3 right = transform.TransformDirection(Vector3.right);
         // Press Left Shift to run
         bool isRunning = Input.GetKey(KeyCode.LeftShift);
+        bool isGrounded = characterController.isGrounded;
         float curSpeedX = canMove ? (isRunning ? runningSpeed : walkingSpeed) * Input.GetAxis("Vertical") : 0;
-        float curSpeedY = canMove ? (isRunning ? runningSpeed : walkingSpeed) * Input.GetAxis("Horizontal") : 0;
+        float curSpeedZ = canMove ? walkingSpeed * Input.GetAxis("Horizontal") : 0;
         float movementDirectionY = moveDirection.y;
-        moveDirection = (forward * curSpeedX) + (right * curSpeedY);
-
-        if (Input.GetButton("Jump") && canMove && characterController.isGrounded)
+        if (curSpeedX < 0) curSpeedX *= backwardsSpeedMultiplier;
+        curSpeedZ *= sideSpeedMultiplier;
+        moveDirection = (forward * curSpeedX) + (right * curSpeedZ);
+        if (Input.GetButton("Jump") && canMove && isGrounded)
         {
             moveDirection.y = jumpSpeed;
         }
@@ -54,9 +58,13 @@ public class FPController : MonoBehaviour
         // Apply gravity. Gravity is multiplied by deltaTime twice (once here, and once below
         // when the moveDirection is multiplied by deltaTime). This is because gravity should be applied
         // as an acceleration (ms^-2)
-        if (!characterController.isGrounded)
+        if (!isGrounded)
         {
             moveDirection.y -= gravity * Time.deltaTime;
+        }
+        else if (!Input.GetButton("Jump"))
+        {
+            moveDirection.y = 0;
         }
 
         // Move the controller

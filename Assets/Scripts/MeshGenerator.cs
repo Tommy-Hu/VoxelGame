@@ -112,7 +112,6 @@ public class MeshGenerator : MonoBehaviour
         });
         while (isGeneratedDataLocked) continue;
         isGeneratedDataLocked = true;
-        print($"Copying {generatedData.Count}");
         var clonedGeneratedData = new Dictionary<Vector2Int, MeshData>(generatedData);
         generatedData.Clear();
         isGeneratedDataLocked = false;
@@ -127,7 +126,6 @@ public class MeshGenerator : MonoBehaviour
 
     private void ReceiveMeshData(Vector2Int chunkPos, MeshData meshData)
     {
-        Debug.LogWarning("Receive");
         while (isGeneratedDataLocked) continue;
         isGeneratedDataLocked = true;
         if (chunks.ContainsKey(chunkPos))
@@ -137,7 +135,6 @@ public class MeshGenerator : MonoBehaviour
             generatedData.Add(chunkPos, meshData);
         }
         isGeneratedDataLocked = false;
-        Debug.LogWarning("Finished Receive");
     }
 
     public void DisplayChunk(MeshRenderer renderer, MeshFilter meshFilter, MeshCollider meshCollider, MeshData meshData)
