@@ -302,7 +302,7 @@ GameObject:
   - component: {fileID: 963194228}
   - component: {fileID: 963194227}
   - component: {fileID: 963194226}
-  m_Layer: 0
+  m_Layer: 1
   m_Name: Main Camera
   m_TagString: MainCamera
   m_Icon: {fileID: 0}
@@ -368,7 +368,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 963194225}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.68299866, z: 0}
+  m_LocalPosition: {x: 0, y: 0.76, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 1332753196}
@@ -384,7 +384,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1129081842}
   - component: {fileID: 1129081843}
-  m_Layer: 0
+  m_Layer: 1
   m_Name: Point Light
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -580,7 +580,7 @@ GameObject:
   - component: {fileID: 1332753197}
   - component: {fileID: 1332753200}
   - component: {fileID: 1332753199}
-  m_Layer: 0
+  m_Layer: 1
   m_Name: Player
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -666,11 +666,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   walkingSpeed: 3.5
   runningSpeed: 6
+  sideSpeedMultiplier: 0.75
+  backwardsSpeedMultiplier: 0.7
   jumpSpeed: 8
   gravity: 30
   playerCamera: {fileID: 963194227}
   lookSpeed: 2
   lookXLimit: 80
+  meshGenerator: {fileID: 1962518418}
   canMove: 1
 --- !u!143 &1332753200
 CharacterController:
@@ -735,7 +738,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   scale: 0.05
   scaleY: 20
-  cellSize: 1
   setBlockThreshold: 0.409
   radius: 4
   chunkPrefab: {fileID: 1574007446963265592, guid: 1e699cb692abe0043bb57f3917a7132d, type: 3}
@@ -784,6 +786,13 @@ MonoBehaviour:
   - Grass
   - Dirt
   - Bedrock
+  - Coal Ore
+  - Iron Ore
+  - Gold Ore
+  - Diamond Ore
+  - Granite
+  - Andesite
+  - Diorite
   blockDatas:
   - PXFace: {fileID: -4722666058224125837, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
     NXFace: {fileID: -4722666058224125837, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
@@ -827,6 +836,90 @@ MonoBehaviour:
     NYFace: {fileID: -1630071362071465570, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
     PZFace: {fileID: -1630071362071465570, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
     NZFace: {fileID: -1630071362071465570, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    PYUV: []
+    NYUV: []
+    PXUV: []
+    NXUV: []
+    PZUV: []
+    NZUV: []
+  - PXFace: {fileID: 1834203184248656671, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    NXFace: {fileID: 1834203184248656671, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    PYFace: {fileID: 1834203184248656671, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    NYFace: {fileID: 1834203184248656671, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    PZFace: {fileID: 1834203184248656671, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    NZFace: {fileID: 1834203184248656671, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    PYUV: []
+    NYUV: []
+    PXUV: []
+    NXUV: []
+    PZUV: []
+    NZUV: []
+  - PXFace: {fileID: -7398124754454249975, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    NXFace: {fileID: -7398124754454249975, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    PYFace: {fileID: -7398124754454249975, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    NYFace: {fileID: -7398124754454249975, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    PZFace: {fileID: -7398124754454249975, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    NZFace: {fileID: -7398124754454249975, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    PYUV: []
+    NYUV: []
+    PXUV: []
+    NXUV: []
+    PZUV: []
+    NZUV: []
+  - PXFace: {fileID: 2468916357594274007, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    NXFace: {fileID: 2468916357594274007, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    PYFace: {fileID: 2468916357594274007, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    NYFace: {fileID: 2468916357594274007, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    PZFace: {fileID: 2468916357594274007, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    NZFace: {fileID: 2468916357594274007, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    PYUV: []
+    NYUV: []
+    PXUV: []
+    NXUV: []
+    PZUV: []
+    NZUV: []
+  - PXFace: {fileID: 2678358374231730124, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    NXFace: {fileID: 2678358374231730124, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    PYFace: {fileID: 2678358374231730124, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    NYFace: {fileID: 2678358374231730124, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    PZFace: {fileID: 2678358374231730124, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    NZFace: {fileID: 2678358374231730124, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    PYUV: []
+    NYUV: []
+    PXUV: []
+    NXUV: []
+    PZUV: []
+    NZUV: []
+  - PXFace: {fileID: -6113953163171947076, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    NXFace: {fileID: -6113953163171947076, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    PYFace: {fileID: -6113953163171947076, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    NYFace: {fileID: -6113953163171947076, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    PZFace: {fileID: -6113953163171947076, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    NZFace: {fileID: -6113953163171947076, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    PYUV: []
+    NYUV: []
+    PXUV: []
+    NXUV: []
+    PZUV: []
+    NZUV: []
+  - PXFace: {fileID: 4161959473275820176, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    NXFace: {fileID: 4161959473275820176, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    PYFace: {fileID: 4161959473275820176, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    NYFace: {fileID: 4161959473275820176, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    PZFace: {fileID: 4161959473275820176, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    NZFace: {fileID: 4161959473275820176, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    PYUV: []
+    NYUV: []
+    PXUV: []
+    NXUV: []
+    PZUV: []
+    NZUV: []
+  - PXFace: {fileID: -1770684296112782781, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    NXFace: {fileID: -1770684296112782781, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    PYFace: {fileID: -1770684296112782781, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    NYFace: {fileID: -1770684296112782781, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    PZFace: {fileID: -1770684296112782781, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    NZFace: {fileID: -1770684296112782781, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
     PYUV: []
     NYUV: []
     PXUV: []

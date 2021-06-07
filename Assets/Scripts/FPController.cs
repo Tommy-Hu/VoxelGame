@@ -15,6 +15,7 @@ public class FPController : MonoBehaviour
     public Camera playerCamera;
     public float lookSpeed = 2.0f;
     public float lookXLimit = 45.0f;
+    public MeshGenerator meshGenerator;
 
     CharacterController characterController;
     Vector3 moveDirection = Vector3.zero;
@@ -37,8 +38,8 @@ public class FPController : MonoBehaviour
         // We are grounded, so recalculate move direction based on axes
         Vector3 forward = transform.TransformDirection(Vector3.forward);
         Vector3 right = transform.TransformDirection(Vector3.right);
-        // Press Left Shift to run
-        bool isRunning = Input.GetKey(KeyCode.LeftShift);
+        // Press Left Control to run
+        bool isRunning = Input.GetKey(KeyCode.LeftControl);
         bool isGrounded = characterController.isGrounded;
         float curSpeedX = canMove ? (isRunning ? runningSpeed : walkingSpeed) * Input.GetAxis("Vertical") : 0;
         float curSpeedZ = canMove ? walkingSpeed * Input.GetAxis("Horizontal") : 0;
@@ -77,6 +78,17 @@ public class FPController : MonoBehaviour
             rotationX = Mathf.Clamp(rotationX, -lookXLimit, lookXLimit);
             playerCamera.transform.localRotation = Quaternion.Euler(rotationX, 0, 0);
             transform.rotation *= Quaternion.Euler(0, Input.GetAxis("Mouse X") * lookSpeed, 0);
+        }
+    }
+
+    private void OnDrawGizmos()
+    {
+        Vector3Int? blockPos = meshGenerator.GetRaycastedBlock();
+        if (blockPos != null)
+        {
+            Vector3 blockSize = Vector3.one * ChunkGenerator.cellSize;
+            //Gizmos.DrawWireCube(blockPos.Value + new Vector3(blockSize.x, blockSize.y, blockSize.z) / 2f, blockSize);
+            Gizmos.DrawSphere(blockPos.Value, 0.1f);
         }
     }
 }

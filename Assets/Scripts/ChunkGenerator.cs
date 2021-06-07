@@ -23,7 +23,7 @@ public static class ChunkGenerator
 
     public static Thread[] generationThreads;
 
-    public static Action<Vector2Int, MeshData> OnDataGenerated;
+    public static Action<Vector2Int, MeshData, Chunk> OnDataGenerated;
 
     private static List<Vector2Int> pendingGeneration;
     private static object pendingLock;
@@ -139,17 +139,17 @@ public static class ChunkGenerator
                 }
                 if (curKey != null)
                 {
-                    MeshData genDat = GenerateChunkData(curKey.Value);
-                    OnDataGenerated.Invoke(curKey.Value, genDat);
+                    MeshData genDat = GenerateChunkData(curKey.Value, out Chunk chunk);
+                    OnDataGenerated.Invoke(curKey.Value, genDat, chunk);
                 }
             }
             waitHandles[threadInd].Reset();
         }
     }
 
-    private static MeshData GenerateChunkData(Vector2Int chunkPos)
+    private static MeshData GenerateChunkData(Vector2Int chunkPos, out Chunk chunk)
     {
-        Chunk chunk = GenerateChunk(new Vector2(
+        chunk = GenerateChunk(new Vector2(
             chunkPos.x * scale * (CHUNK_SIZE - 1),
             chunkPos.y * scale * (CHUNK_SIZE - 1))
             + seedOffset);
@@ -222,22 +222,26 @@ public static class ChunkGenerator
         }
         return result;
     }
+
     public static bool IsBlockInCaves(float x, float y, float z)
     {
         return Noise3D(x, y, z) >= setBlockThreshold;
     }
+
     public static bool IsBlockOnSurface(float nonModifiedY, float maxSurfaceBlockHeight, out bool isTopMostLayer)
     {
         bool isBlock = nonModifiedY < maxSurfaceBlockHeight;
         isTopMostLayer = nonModifiedY + 1 >= maxSurfaceBlockHeight;
         return isBlock;
     }
+
     public static float GetMaxSurfaceBlockHeight(float x, float z)
     {
         float normalizedNoise = Noise2D(x, z);
         float mappedNoise = normalizedNoise * SurfaceThickness;
         return surfaceGenerationMin + mappedNoise;
     }
+
     public static Block GetBlock(Vector2 offset, float x, float y, float z, float maxSurfaceBlockHeight)
     {
         Block block = null;//what type of block is this if it is not air?
@@ -245,7 +249,22 @@ public static class ChunkGenerator
 
         if (y >= caveGenerationMin && y < caveGenerationMax)
         {
-            block = new Block("Stone", new Vector3(x * cellSize, y * cellSize, z * cellSize));
+            if (IsBlockCoalOre(x, y, z))
+                block = new Block("Coal Ore", new Vector3(x * cellSize, y * cellSize, z * cellSize));
+            else if (IsBlockIronOre(x, y, z))
+                block = new Block("Iron Ore", new Vector3(x * cellSize, y * cellSize, z * cellSize));
+            else if (IsBlockGoldOre(x, y, z))
+                block = new Block("Gold Ore", new Vector3(x * cellSize, y * cellSize, z * cellSize));
+            else if (IsBlockDiamondOre(x, y, z))
+                block = new Block("Diamond Ore", new Vector3(x * cellSize, y * cellSize, z * cellSize));
+            else if (IsBlockGranite(x, y, z))
+                block = new Block("Granite", new Vector3(x * cellSize, y * cellSize, z * cellSize));
+            else if (IsBlockAndesite(x, y, z))
+                block = new Block("Andesite", new Vector3(x * cellSize, y * cellSize, z * cellSize));
+            else if (IsBlockDiorite(x, y, z))
+                block = new Block("Diorite", new Vector3(x * cellSize, y * cellSize, z * cellSize));
+            else
+                block = new Block("Stone", new Vector3(x * cellSize, y * cellSize, z * cellSize));
             hasBlock = IsBlockInCaves(offset.x + x * scale, y * scale, offset.y + z * scale);//scale the offsets to generate random noise
         }
         else if (y < caveGenerationMin)
@@ -277,6 +296,7 @@ public static class ChunkGenerator
         }
         return hasBlock ? block : null;
     }
+
     public static float Noise3D(float x, float y, float z)
     {
         float ab = Mathf.PerlinNoise(x, y);
@@ -294,5 +314,76 @@ public static class ChunkGenerator
     public static float Noise2D(float x, float z)
     {
         return Mathf.PerlinNoise(x, z);
+    }
+
+    public static bool IsBlockGranite(float x, float y, float z)
+    {
+        float offsetX = -123;
+        float offsetY = -1235;
+        float offsetZ = 4231;
+        float scale = 0.3f;
+        float threshold = 0.35f;
+        return Noise3D((x + offsetX) * scale, (y + offsetY) * scale, (z + offsetZ) * scale) <= threshold;
+    }
+
+    public static bool IsBlockAndesite(float x, float y, float z)
+    {
+        float offsetX = 5525;
+        float offsetY = 12341;
+        float offsetZ = -234;
+        float scale = 0.2f;
+        float threshold = 0.35f;
+        return Noise3D((x + offsetX) * scale, (y + offsetY) * scale, (z + offsetZ) * scale) <= threshold;
+    }
+
+    public static bool IsBlockDiorite(float x, float y, float z)
+    {
+        float offsetX = -13;
+        float offsetY = 1234;
+        float offsetZ = 5234;
+        float scale = 0.17f;
+        float threshold = 0.35f;
+        return Noise3D((x + offsetX) * scale, (y + offsetY) * scale, (z + offsetZ) * scale) <= threshold;
+    }
+
+
+    public static bool IsBlockCoalOre(float x, float y, float z)
+    {
+        float offsetX = -545;
+        float offsetY = 124;
+        float offsetZ = 23;
+        float scale = 0.1f;
+        float threshold = 0.35f;
+        return Noise3D((x + offsetX) * scale, (y + offsetY) * scale, (z + offsetZ) * scale) <= threshold;
+    }
+
+    public static bool IsBlockIronOre(float x, float y, float z)
+    {
+        float offsetX = 1002;
+        float offsetY = 1010;
+        float offsetZ = 1691;
+        float scale = 0.095f;
+        float threshold = 0.31f;
+        return Noise3D((x + offsetX) * scale, (y + offsetY) * scale, (z + offsetZ) * scale) <= threshold;
+    }
+
+    public static bool IsBlockGoldOre(float x, float y, float z)
+    {
+        float offsetX = 2512;
+        float offsetY = -5313;
+        float offsetZ = 2143;
+        float scale = 0.095f;
+        float threshold = 0.31f;
+        return Noise3D((x + offsetX) * scale, (y + offsetY) * scale, (z + offsetZ) * scale) <= threshold;
+    }
+
+    public static bool IsBlockDiamondOre(float x, float y, float z)
+    {
+        float offsetX = 423;
+        float offsetY = -512;
+        float offsetZ = -691;
+        float scale = 0.07f;
+        float threshold = 0.29f;
+        return Noise3D((x + offsetX) * scale, (y + offsetY) * scale, (z + offsetZ) * scale) <= threshold;
     }
 }
