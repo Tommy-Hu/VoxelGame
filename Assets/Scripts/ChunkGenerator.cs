@@ -1,15 +1,26 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 
 public static class ChunkGenerator
 {
+    /// <summary>
+    /// The L and W of a chunk
+    /// </summary>
     public const int CHUNK_SIZE = 16;
+    /// <summary>
+    /// How many blocks in the y-axis can there be in a chunk?
+    /// </summary>
     public const int CHUNK_HEIGHT = 256;
-    public const float cellSize = 1f;
+    public const float CELL_SIZE = 1f;
+    /// <summary>
+    /// Represents the size of half a cell.
+    /// </summary>
+    public const float H_CELL_SIZE = 0.5f;
     public const int generationsPerFrame = 2;
     public const int THREADS_COUNT = 2;
 
@@ -26,6 +37,7 @@ public static class ChunkGenerator
     public static Action<Vector2Int, MeshData, Chunk> OnDataGenerated;
 
     private static List<Vector2Int> pendingGeneration;
+    private static Dictionary<Vector2Int, Chunk> pendingChunkRegeneration;
     private static object pendingLock;
     public static object[] generatedDataLocks;
     private static bool stopThread = false;
@@ -49,10 +61,10 @@ public static class ChunkGenerator
         waitHandles = new EventWaitHandle[THREADS_COUNT];
 
         generationThreads = new Thread[THREADS_COUNT];
-        pendingGeneration = new List<Vector2Int>();
         pendingLock = new object();
         generatedDataLocks = new object[THREADS_COUNT];
         pendingGeneration = new List<Vector2Int>();
+        pendingChunkRegeneration = new Dictionary<Vector2Int, Chunk>();
         for (int i = 0; i < THREADS_COUNT; i++)
         {
             int ind = i;
@@ -120,6 +132,15 @@ public static class ChunkGenerator
         }
     }
 
+    public static void AddChunkToPendingRegeneration(Vector2Int pos, Chunk pending)
+    {
+        lock (pendingLock)
+        {
+            if (pendingChunkRegeneration.ContainsKey(pos)) pendingChunkRegeneration.Remove(pos);
+            pendingChunkRegeneration.Add(pos, pending);
+        }
+    }
+
     private static void GenerateChunkDataThreaded(int threadInd)
     {
         while (!stopThread)
@@ -127,19 +148,31 @@ public static class ChunkGenerator
             waitHandles[threadInd].WaitOne();
             for (int i = 0; i < generationsPerFrame; i++)
             {
-                Vector2Int? curKey;
+                Vector2Int? curKey = null;
+                Chunk chunk = null;
                 lock (pendingLock)
                 {
-                    if (pendingGeneration.Count > 0)
+                    if (pendingChunkRegeneration.Count > 0)
+                    {
+                        curKey = pendingChunkRegeneration.First().Key;
+                        chunk = pendingChunkRegeneration[curKey.Value];
+                        pendingChunkRegeneration.Remove(curKey.Value);
+                    }
+                    else if (pendingGeneration.Count > 0)
                     {
                         curKey = pendingGeneration[0];
                         pendingGeneration.RemoveAt(0);
                     }
                     else break;
                 }
-                if (curKey != null)
+                if (chunk != null)
                 {
-                    MeshData genDat = GenerateChunkData(curKey.Value, out Chunk chunk);
+                    MeshData genDat = GenerateMeshData(chunk);
+                    OnDataGenerated.Invoke(curKey.Value, genDat, chunk);
+                }
+                else if (curKey != null)
+                {
+                    MeshData genDat = GenerateChunkData(curKey.Value, out chunk);
                     OnDataGenerated.Invoke(curKey.Value, genDat, chunk);
                 }
             }
@@ -250,28 +283,28 @@ public static class ChunkGenerator
         if (y >= caveGenerationMin && y < caveGenerationMax)
         {
             if (IsBlockCoalOre(x, y, z))
-                block = new Block("Coal Ore", new Vector3(x * cellSize, y * cellSize, z * cellSize));
+                block = new Block("Coal Ore", new Vector3(x * CELL_SIZE, y * CELL_SIZE, z * CELL_SIZE));
             else if (IsBlockIronOre(x, y, z))
-                block = new Block("Iron Ore", new Vector3(x * cellSize, y * cellSize, z * cellSize));
+                block = new Block("Iron Ore", new Vector3(x * CELL_SIZE, y * CELL_SIZE, z * CELL_SIZE));
             else if (IsBlockGoldOre(x, y, z))
-                block = new Block("Gold Ore", new Vector3(x * cellSize, y * cellSize, z * cellSize));
+                block = new Block("Gold Ore", new Vector3(x * CELL_SIZE, y * CELL_SIZE, z * CELL_SIZE));
             else if (IsBlockDiamondOre(x, y, z))
-                block = new Block("Diamond Ore", new Vector3(x * cellSize, y * cellSize, z * cellSize));
+                block = new Block("Diamond Ore", new Vector3(x * CELL_SIZE, y * CELL_SIZE, z * CELL_SIZE));
             else if (IsBlockGranite(x, y, z))
-                block = new Block("Granite", new Vector3(x * cellSize, y * cellSize, z * cellSize));
+                block = new Block("Granite", new Vector3(x * CELL_SIZE, y * CELL_SIZE, z * CELL_SIZE));
             else if (IsBlockAndesite(x, y, z))
-                block = new Block("Andesite", new Vector3(x * cellSize, y * cellSize, z * cellSize));
+                block = new Block("Andesite", new Vector3(x * CELL_SIZE, y * CELL_SIZE, z * CELL_SIZE));
             else if (IsBlockDiorite(x, y, z))
-                block = new Block("Diorite", new Vector3(x * cellSize, y * cellSize, z * cellSize));
+                block = new Block("Diorite", new Vector3(x * CELL_SIZE, y * CELL_SIZE, z * CELL_SIZE));
             else
-                block = new Block("Stone", new Vector3(x * cellSize, y * cellSize, z * cellSize));
+                block = new Block("Stone", new Vector3(x * CELL_SIZE, y * CELL_SIZE, z * CELL_SIZE));
             hasBlock = IsBlockInCaves(offset.x + x * scale, y * scale, offset.y + z * scale);//scale the offsets to generate random noise
         }
         else if (y < caveGenerationMin)
         {
             if (y != -1)
             {
-                block = new Block("Bedrock", new Vector3(x * cellSize, y * cellSize, z * cellSize));
+                block = new Block("Bedrock", new Vector3(x * CELL_SIZE, y * CELL_SIZE, z * CELL_SIZE));
                 hasBlock = true;
             }
         }
@@ -288,9 +321,9 @@ public static class ChunkGenerator
                 if (hasBlock)
                 {
                     if (isTopMostLayer)
-                        block = new Block("Grass", new Vector3(x * cellSize, y * cellSize, z * cellSize));
+                        block = new Block("Grass", new Vector3(x * CELL_SIZE, y * CELL_SIZE, z * CELL_SIZE));
                     else
-                        block = new Block("Dirt", new Vector3(x * cellSize, y * cellSize, z * cellSize));
+                        block = new Block("Dirt", new Vector3(x * CELL_SIZE, y * CELL_SIZE, z * CELL_SIZE));
                 }
             }
         }
@@ -384,6 +417,7 @@ public static class ChunkGenerator
         float offsetZ = -691;
         float scale = 0.07f;
         float threshold = 0.29f;
+        //float threshold = 1f;
         return Noise3D((x + offsetX) * scale, (y + offsetY) * scale, (z + offsetZ) * scale) <= threshold;
     }
 }

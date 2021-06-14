@@ -208,7 +208,7 @@ GameObject:
   m_Component:
   - component: {fileID: 705507995}
   - component: {fileID: 705507994}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: Directional Light
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -302,7 +302,7 @@ GameObject:
   - component: {fileID: 963194228}
   - component: {fileID: 963194227}
   - component: {fileID: 963194226}
-  m_Layer: 1
+  m_Layer: 2
   m_Name: Main Camera
   m_TagString: MainCamera
   m_Icon: {fileID: 0}
@@ -384,7 +384,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1129081842}
   - component: {fileID: 1129081843}
-  m_Layer: 1
+  m_Layer: 2
   m_Name: Point Light
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -580,7 +580,7 @@ GameObject:
   - component: {fileID: 1332753197}
   - component: {fileID: 1332753200}
   - component: {fileID: 1332753199}
-  m_Layer: 1
+  m_Layer: 2
   m_Name: Player
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -672,7 +672,7 @@ MonoBehaviour:
   gravity: 30
   playerCamera: {fileID: 963194227}
   lookSpeed: 2
-  lookXLimit: 80
+  lookXLimit: 89
   meshGenerator: {fileID: 1962518418}
   canMove: 1
 --- !u!143 &1332753200
@@ -793,6 +793,7 @@ MonoBehaviour:
   - Granite
   - Andesite
   - Diorite
+  - Wooden Planks
   blockDatas:
   - PXFace: {fileID: -4722666058224125837, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
     NXFace: {fileID: -4722666058224125837, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
@@ -926,6 +927,18 @@ MonoBehaviour:
     NXUV: []
     PZUV: []
     NZUV: []
+  - PXFace: {fileID: 5918875572453894432, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    NXFace: {fileID: 5918875572453894432, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    PYFace: {fileID: 5918875572453894432, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    NYFace: {fileID: 5918875572453894432, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    PZFace: {fileID: 5918875572453894432, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    NZFace: {fileID: 5918875572453894432, guid: 5fb7309c3166e0447abf30a44be3f397, type: 3}
+    PYUV: []
+    NYUV: []
+    PXUV: []
+    NXUV: []
+    PZUV: []
+    NZUV: []
 --- !u!1 &2079725912
 GameObject:
   m_ObjectHideFlags: 0
@@ -937,7 +950,7 @@ GameObject:
   - component: {fileID: 2079725915}
   - component: {fileID: 2079725914}
   - component: {fileID: 2079725913}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: EventSystem
   m_TagString: Untagged
   m_Icon: {fileID: 0}

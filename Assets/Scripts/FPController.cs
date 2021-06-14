@@ -16,6 +16,7 @@ public class FPController : MonoBehaviour
     public float lookSpeed = 2.0f;
     public float lookXLimit = 45.0f;
     public MeshGenerator meshGenerator;
+    public Block selectedBlock;
 
     CharacterController characterController;
     Vector3 moveDirection = Vector3.zero;
@@ -31,6 +32,67 @@ public class FPController : MonoBehaviour
 
     void Update()
     {
+        //lookingAtBlockPos is the position of the block under the cursor in world position
+        Vector3Int? lookingAtBlockPos = meshGenerator.GetRaycastedBlock(out Vector3 normal);
+        if (lookingAtBlockPos != null)
+        {
+            if (Input.GetMouseButtonDown(0))
+            {
+                meshGenerator.RemoveBlock(lookingAtBlockPos.Value.x, lookingAtBlockPos.Value.y, lookingAtBlockPos.Value.z);
+            }
+            else if (Input.GetMouseButtonDown(1))
+            {
+                string blockName = "Stone";
+                if (normal.x < 0)
+                {
+                    //nx face
+                    Vector3Int actualBlockLocation =
+                        new Vector3Int(lookingAtBlockPos.Value.x - 1, lookingAtBlockPos.Value.y, lookingAtBlockPos.Value.z);
+                    meshGenerator.SetBlock(actualBlockLocation.x, actualBlockLocation.y, actualBlockLocation.z,
+                        blockName);
+                }
+                else if (normal.x > 0)
+                {
+                    //px face
+                    Vector3Int actualBlockLocation =
+                        new Vector3Int(lookingAtBlockPos.Value.x + 1, lookingAtBlockPos.Value.y, lookingAtBlockPos.Value.z);
+                    meshGenerator.SetBlock(actualBlockLocation.x, actualBlockLocation.y, actualBlockLocation.z,
+                        blockName);
+                }
+                else if (normal.y > 0)
+                {
+                    //py face (top face)
+                    Vector3Int actualBlockLocation =
+                        new Vector3Int(lookingAtBlockPos.Value.x, lookingAtBlockPos.Value.y + 1, lookingAtBlockPos.Value.z);
+                    meshGenerator.SetBlock(actualBlockLocation.x, actualBlockLocation.y, actualBlockLocation.z,
+                        blockName);
+                }
+                else if (normal.y < 0)
+                {
+                    //ny face (bottom face)
+                    Vector3Int actualBlockLocation =
+                        new Vector3Int(lookingAtBlockPos.Value.x, lookingAtBlockPos.Value.y - 1, lookingAtBlockPos.Value.z);
+                    meshGenerator.SetBlock(actualBlockLocation.x, actualBlockLocation.y, actualBlockLocation.z,
+                        blockName);
+                }
+                else if (normal.z > 0)
+                {
+                    //pz face (top face)
+                    Vector3Int actualBlockLocation =
+                        new Vector3Int(lookingAtBlockPos.Value.x, lookingAtBlockPos.Value.y, lookingAtBlockPos.Value.z + 1);
+                    meshGenerator.SetBlock(actualBlockLocation.x, actualBlockLocation.y, actualBlockLocation.z,
+                        blockName);
+                }
+                else if (normal.z < 0)
+                {
+                    //nz face (bottom face)
+                    Vector3Int actualBlockLocation =
+                        new Vector3Int(lookingAtBlockPos.Value.x, lookingAtBlockPos.Value.y, lookingAtBlockPos.Value.z - 1);
+                    meshGenerator.SetBlock(actualBlockLocation.x, actualBlockLocation.y, actualBlockLocation.z,
+                        blockName);
+                }
+            }
+        }
         // Lock cursor
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
@@ -83,11 +145,13 @@ public class FPController : MonoBehaviour
 
     private void OnDrawGizmos()
     {
-        Vector3Int? blockPos = meshGenerator.GetRaycastedBlock();
+        Vector3Int? blockPos = meshGenerator.GetRaycastedBlock(out _);
         if (blockPos != null)
         {
-            Vector3 blockSize = Vector3.one * ChunkGenerator.cellSize;
-            //Gizmos.DrawWireCube(blockPos.Value + new Vector3(blockSize.x, blockSize.y, blockSize.z) / 2f, blockSize);
+            //print(blockPos);
+            Vector3 blockSize = Vector3.one * ChunkGenerator.CELL_SIZE;
+            Gizmos.color = Color.black;
+            Gizmos.DrawWireCube(blockPos.Value + new Vector3(blockSize.x, blockSize.y, blockSize.z) / 2f, blockSize);
             Gizmos.DrawSphere(blockPos.Value, 0.1f);
         }
     }

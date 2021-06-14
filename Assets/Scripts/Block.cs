@@ -38,8 +38,14 @@ public class Block
 
     public static Dictionary<string, BlockData> blocksMap = new Dictionary<string, BlockData>();
 
-    private Vector3 offset;
+    public Vector3 offset;
 
+    /// <summary>
+    /// Instantiates a new Block.
+    /// </summary>
+    /// <param name="type">What type of block is this? Stone? Grass? Diamond Ore? etc.</param>
+    /// <param name="offset">The offset of the block NOT relative to the chunk's (-1, -1, -1) origin. 
+    /// Or in other words, offset (0, 0, 0) coresponds to the block at world pos (0, 0, 0).</param>
     public Block(string type, Vector3 offset)
     {
         this.blockType = type;
