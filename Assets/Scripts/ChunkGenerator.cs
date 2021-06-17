@@ -24,7 +24,7 @@ public static class ChunkGenerator
     public const int generationsPerFrame = 2;
     public const int THREADS_COUNT = 2;
 
-    public static float scale;
+    public static float noiseScale;
     public static float setBlockThreshold;
     public static int caveGenerationMin;
     public static int caveGenerationMax;
@@ -50,7 +50,7 @@ public static class ChunkGenerator
         int caveGenerationMin, int caveGenerationMax, int surfaceGenerationMin, int surfaceGenerationMax,
         Vector2 seedOffset)
     {
-        ChunkGenerator.scale = scale;
+        ChunkGenerator.noiseScale = scale;
         ChunkGenerator.setBlockThreshold = setBlockThreshold;
         ChunkGenerator.caveGenerationMin = caveGenerationMin;
         ChunkGenerator.caveGenerationMax = caveGenerationMax;
@@ -182,10 +182,7 @@ public static class ChunkGenerator
 
     private static MeshData GenerateChunkData(Vector2Int chunkPos, out Chunk chunk)
     {
-        chunk = GenerateChunk(new Vector2(
-            chunkPos.x * scale * (CHUNK_SIZE - 1),
-            chunkPos.y * scale * (CHUNK_SIZE - 1))
-            + seedOffset);
+        chunk = GenerateChunk(chunkPos);
         MeshData meshData = GenerateMeshData(chunk);
         return meshData;
     }
@@ -239,23 +236,43 @@ public static class ChunkGenerator
         data.uvs = uvs.ToArray();
         return data;
     }
-    public static Chunk GenerateChunk(Vector2 offset)
+    /// <summary>
+    /// Generates chunk with a chunkPos.
+    /// </summary>
+    /// <param name="offset"></param>
+    /// <returns></returns>
+    public static Chunk GenerateChunk(Vector2Int chunkPos)
     {
         Chunk result = new Chunk();
         for (int z = -1; z < CHUNK_SIZE + 1; z++)
         {
             for (int x = -1; x < CHUNK_SIZE + 1; x++)
             {
-                float maxSurfaceBlockHeight = GetMaxSurfaceBlockHeight(offset.x + x * scale, offset.y + z * scale);
+                Vector2 blockNoiseWorldPos = new Vector2(
+                    (chunkPos.x * CHUNK_SIZE + x) * CELL_SIZE * noiseScale + seedOffset.x,
+                    (chunkPos.y * CHUNK_SIZE + z) * CELL_SIZE * noiseScale + seedOffset.y);//represents the offset of this block
+                float maxSurfaceBlockHeight = GetMaxSurfaceBlockHeight(blockNoiseWorldPos.x, blockNoiseWorldPos.y);
                 for (int y = -1; y < CHUNK_HEIGHT + 1; y++)
                 {
-                    result.blocks[x + 1, y + 1, z + 1] = GetBlock(offset, x, y, z, maxSurfaceBlockHeight);
+                    result.blocks[x + 1, y + 1, z + 1] = GetBlock(
+                        blockNoiseWorldPos.x,
+                        y * CELL_SIZE * noiseScale,
+                        blockNoiseWorldPos.y,
+                        x, y, z,
+                        maxSurfaceBlockHeight);
                 }
             }
         }
         return result;
     }
 
+    /// <summary>
+    /// is this block at (x, y, z), which is in a cave, a solid block or air block?
+    /// </summary>
+    /// <param name="x"></param>
+    /// <param name="y"></param>
+    /// <param name="z"></param>
+    /// <returns></returns>
     public static bool IsBlockInCaves(float x, float y, float z)
     {
         return Noise3D(x, y, z) >= setBlockThreshold;
@@ -275,55 +292,65 @@ public static class ChunkGenerator
         return surfaceGenerationMin + mappedNoise;
     }
 
-    public static Block GetBlock(Vector2 offset, float x, float y, float z, float maxSurfaceBlockHeight)
+    /// <summary>
+    /// Gets a block at (x, y, z) where x, y, and z are scaled and offsetted by chunk pos, scale, CELL_SIZE, and seedOffset etc.
+    /// Where bx, by, bz are block position in chunk pos. (i.e, (0, 0, 0) (NOT (1, 1, 1)!!!!) means origin block of this chunk).
+    /// </summary>
+    /// <param name="offset"></param>
+    /// <param name="x"></param>
+    /// <param name="y"></param>
+    /// <param name="z"></param>
+    /// <param name="maxSurfaceBlockHeight"></param>
+    /// <returns></returns>
+    public static Block GetBlock(float x, float y, float z, int bx, int by, int bz, float maxSurfaceBlockHeight)
     {
         Block block = null;//what type of block is this if it is not air?
         bool hasBlock = false;//is this a block or air?
 
-        if (y >= caveGenerationMin && y < caveGenerationMax)
+        if (by >= caveGenerationMin && by < caveGenerationMax)
         {
             if (IsBlockCoalOre(x, y, z))
-                block = new Block("Coal Ore", new Vector3(x * CELL_SIZE, y * CELL_SIZE, z * CELL_SIZE));
+                block = new Block("Coal Ore", new Vector3(bx, by, bz));
             else if (IsBlockIronOre(x, y, z))
-                block = new Block("Iron Ore", new Vector3(x * CELL_SIZE, y * CELL_SIZE, z * CELL_SIZE));
+                block = new Block("Iron Ore", new Vector3(bx, by, bz));
             else if (IsBlockGoldOre(x, y, z))
-                block = new Block("Gold Ore", new Vector3(x * CELL_SIZE, y * CELL_SIZE, z * CELL_SIZE));
+                block = new Block("Gold Ore", new Vector3(bx, by, bz));
             else if (IsBlockDiamondOre(x, y, z))
-                block = new Block("Diamond Ore", new Vector3(x * CELL_SIZE, y * CELL_SIZE, z * CELL_SIZE));
+                block = new Block("Diamond Ore", new Vector3(bx, by, bz));
             else if (IsBlockGranite(x, y, z))
-                block = new Block("Granite", new Vector3(x * CELL_SIZE, y * CELL_SIZE, z * CELL_SIZE));
+                block = new Block("Granite", new Vector3(bx, by, bz));
             else if (IsBlockAndesite(x, y, z))
-                block = new Block("Andesite", new Vector3(x * CELL_SIZE, y * CELL_SIZE, z * CELL_SIZE));
+                block = new Block("Andesite", new Vector3(bx, by, bz));
             else if (IsBlockDiorite(x, y, z))
-                block = new Block("Diorite", new Vector3(x * CELL_SIZE, y * CELL_SIZE, z * CELL_SIZE));
+                block = new Block("Diorite", new Vector3(bx, by, bz));
             else
-                block = new Block("Stone", new Vector3(x * CELL_SIZE, y * CELL_SIZE, z * CELL_SIZE));
-            hasBlock = IsBlockInCaves(offset.x + x * scale, y * scale, offset.y + z * scale);//scale the offsets to generate random noise
+                block = new Block("Stone", new Vector3(bx, by, bz));
+            hasBlock = IsBlockInCaves(x, y, z);//scale the offsets to generate random noise
         }
-        else if (y < caveGenerationMin)
+        else if (by < caveGenerationMin)
         {
-            if (y != -1)
+            if (by != -1)
             {
-                block = new Block("Bedrock", new Vector3(x * CELL_SIZE, y * CELL_SIZE, z * CELL_SIZE));
+                block = new Block("Bedrock", new Vector3(bx, by, bz));
                 hasBlock = true;
             }
         }
-        else if (y >= surfaceGenerationMin && y < surfaceGenerationMax)
+        else if (by >= surfaceGenerationMin && by < surfaceGenerationMax)
         {
             //scale the offsets EXCEPT Y to generate random surface noise
-            if (y < caveGenerationMax)
+            if (by < caveGenerationMax)
             {
                 hasBlock = false;
             }
             else
             {
-                hasBlock = IsBlockOnSurface(y, maxSurfaceBlockHeight, out bool isTopMostLayer);
+                hasBlock = IsBlockOnSurface(by, maxSurfaceBlockHeight, out bool isTopMostLayer);
                 if (hasBlock)
                 {
                     if (isTopMostLayer)
-                        block = new Block("Grass", new Vector3(x * CELL_SIZE, y * CELL_SIZE, z * CELL_SIZE));
+                        block = new Block("Grass", new Vector3(bx, by, bz));
                     else
-                        block = new Block("Dirt", new Vector3(x * CELL_SIZE, y * CELL_SIZE, z * CELL_SIZE));
+                        block = new Block("Dirt", new Vector3(bx, by, bz));
                 }
             }
         }
@@ -354,7 +381,7 @@ public static class ChunkGenerator
         float offsetX = -123;
         float offsetY = -1235;
         float offsetZ = 4231;
-        float scale = 0.3f;
+        float scale = 1.8f;
         float threshold = 0.35f;
         return Noise3D((x + offsetX) * scale, (y + offsetY) * scale, (z + offsetZ) * scale) <= threshold;
     }
@@ -364,7 +391,7 @@ public static class ChunkGenerator
         float offsetX = 5525;
         float offsetY = 12341;
         float offsetZ = -234;
-        float scale = 0.2f;
+        float scale = 1.9f;
         float threshold = 0.35f;
         return Noise3D((x + offsetX) * scale, (y + offsetY) * scale, (z + offsetZ) * scale) <= threshold;
     }
@@ -374,7 +401,7 @@ public static class ChunkGenerator
         float offsetX = -13;
         float offsetY = 1234;
         float offsetZ = 5234;
-        float scale = 0.17f;
+        float scale = 2f;
         float threshold = 0.35f;
         return Noise3D((x + offsetX) * scale, (y + offsetY) * scale, (z + offsetZ) * scale) <= threshold;
     }
@@ -385,7 +412,7 @@ public static class ChunkGenerator
         float offsetX = -545;
         float offsetY = 124;
         float offsetZ = 23;
-        float scale = 0.1f;
+        float scale = 3f;
         float threshold = 0.35f;
         return Noise3D((x + offsetX) * scale, (y + offsetY) * scale, (z + offsetZ) * scale) <= threshold;
     }
@@ -395,7 +422,7 @@ public static class ChunkGenerator
         float offsetX = 1002;
         float offsetY = 1010;
         float offsetZ = 1691;
-        float scale = 0.095f;
+        float scale = 5f;
         float threshold = 0.31f;
         return Noise3D((x + offsetX) * scale, (y + offsetY) * scale, (z + offsetZ) * scale) <= threshold;
     }
@@ -405,7 +432,7 @@ public static class ChunkGenerator
         float offsetX = 2512;
         float offsetY = -5313;
         float offsetZ = 2143;
-        float scale = 0.095f;
+        float scale = 8f;
         float threshold = 0.31f;
         return Noise3D((x + offsetX) * scale, (y + offsetY) * scale, (z + offsetZ) * scale) <= threshold;
     }
@@ -415,7 +442,7 @@ public static class ChunkGenerator
         float offsetX = 423;
         float offsetY = -512;
         float offsetZ = -691;
-        float scale = 0.07f;
+        float scale = 9f;
         float threshold = 0.29f;
         //float threshold = 1f;
         return Noise3D((x + offsetX) * scale, (y + offsetY) * scale, (z + offsetZ) * scale) <= threshold;

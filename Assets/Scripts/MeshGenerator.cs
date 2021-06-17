@@ -160,10 +160,10 @@ public class MeshGenerator : MonoBehaviour
         if (meshCollider.sharedMesh != null) Destroy(meshCollider.sharedMesh);
         meshCollider.sharedMesh = mesh;
         Texture2D texture = blocksAtlas;
-        if (renderer.material != null) Destroy(renderer.material);
-        Material temp = new Material(renderer.material);
+        Material temp = new Material(renderer.sharedMaterial);
+        temp.name = "Terrain Material";
         temp.mainTexture = texture;
-        renderer.material = temp;
+        renderer.sharedMaterial = temp;
     }
     public static Mesh GenerateMesh(MeshData meshData)
     {
@@ -177,11 +177,13 @@ public class MeshGenerator : MonoBehaviour
         return mesh;
     }
 
-    public static Vector2Int BlockWorldPosToBlockChunkPos(Vector2Int worldPos)
+    public static Vector3Int BlockWorldPosToBlockChunkPos(Vector3Int worldPos)
     {
-        return new Vector2Int(
-            ((ChunkGenerator.CHUNK_SIZE + (worldPos.x % ChunkGenerator.CHUNK_SIZE)) % ChunkGenerator.CHUNK_SIZE),
-            ((ChunkGenerator.CHUNK_SIZE + (worldPos.y % ChunkGenerator.CHUNK_SIZE)) % ChunkGenerator.CHUNK_SIZE));
+        //formula that converts world block pos to chunk block pos is: (16 + (x % 16)) % 16
+        return new Vector3Int(
+            ((ChunkGenerator.CHUNK_SIZE + (worldPos.x % ChunkGenerator.CHUNK_SIZE)) % ChunkGenerator.CHUNK_SIZE) + 1,
+            worldPos.y + 1,
+            ((ChunkGenerator.CHUNK_SIZE + (worldPos.z % ChunkGenerator.CHUNK_SIZE)) % ChunkGenerator.CHUNK_SIZE) + 1);
     }
 
     public void SetBlock(int x, int y, int z, string blockType)
@@ -189,16 +191,16 @@ public class MeshGenerator : MonoBehaviour
         bool px; bool nx; bool pz; bool nz;
         Vector2Int chunkPos = GetChunkOfBlock(x, y, z, out px, out nx, out pz, out nz);
 
-        //add one because (left, bottom, back) block in a chunk starts at (1, 1, 1).
-        Vector2Int blockChunkPos = BlockWorldPosToBlockChunkPos(new Vector2Int(x, z)) + new Vector2Int(1, 1);
+        //block in a chunk starts at (1, 1, 1).
+        Vector3Int blockChunkPos = BlockWorldPosToBlockChunkPos(new Vector3Int(x, y, z));
         x = blockChunkPos.x;
-        z = blockChunkPos.y;
-        y++;//because y in chunk position starts from 1
+        y = blockChunkPos.y;
+        z = blockChunkPos.z;
         #region set selected block
         {
             Block block = null;
             if (blockType != null)
-                block = new Block(blockType, new Vector3Int(x - 1, y - 1, z - 1));//because block starts from (0, 0, 0)
+                block = new Block(blockType, new Vector3(x - 1, y - 1, z - 1) * ChunkGenerator.CELL_SIZE);//because block starts from (0, 0, 0)
             chunks[chunkPos].Item2.blocks[x, y, z] = block;
             chunksPendingRegeneration.Add(chunkPos);
         }
@@ -209,7 +211,7 @@ public class MeshGenerator : MonoBehaviour
             Vector2Int newChunkPos = new Vector2Int(chunkPos.x + 1, chunkPos.y);//the next chunk's x coord is chunkPos.x + 1
             Block block = null;
             if (blockType != null)
-                block = new Block(blockType, new Vector3Int(0 - 1, y - 1, z - 1));
+                block = new Block(blockType, new Vector3(0 - 1, y - 1, z - 1) * ChunkGenerator.CELL_SIZE);
             //the next chunk's cache of this block is at x = 0.
             chunks[newChunkPos].Item2.blocks[0, y, z] = block;
             chunksPendingRegeneration.Add(newChunkPos);
@@ -219,7 +221,7 @@ public class MeshGenerator : MonoBehaviour
             Vector2Int newChunkPos = new Vector2Int(chunkPos.x - 1, chunkPos.y);
             Block block = null;
             if (blockType != null)
-                block = new Block(blockType, new Vector3Int(ChunkGenerator.CHUNK_SIZE + 1, y, z));
+                block = new Block(blockType, new Vector3(ChunkGenerator.CHUNK_SIZE + 1 - 1, y - 1, z - 1) * ChunkGenerator.CELL_SIZE);
             //the next chunk's cache of this block is at x = CHUNK_SIZE + 1
             chunks[newChunkPos].Item2.blocks[ChunkGenerator.CHUNK_SIZE + 1, y, z] = block;
             chunksPendingRegeneration.Add(newChunkPos);
@@ -229,7 +231,7 @@ public class MeshGenerator : MonoBehaviour
             Vector2Int newChunkPos = new Vector2Int(chunkPos.x, chunkPos.y + 1);
             Block block = null;
             if (blockType != null)
-                block = new Block(blockType, new Vector3Int(x, y, 0));
+                block = new Block(blockType, new Vector3(x - 1, y - 1, 0 - 1) * ChunkGenerator.CELL_SIZE);
             //the next chunk's cache of this block is at z = 0
             chunks[newChunkPos].Item2.blocks[x, y, 0] = block;
             chunksPendingRegeneration.Add(newChunkPos);
@@ -239,7 +241,7 @@ public class MeshGenerator : MonoBehaviour
             Vector2Int newChunkPos = new Vector2Int(chunkPos.x, chunkPos.y - 1);
             Block block = null;
             if (blockType != null)
-                block = new Block(blockType, new Vector3Int(x, y, ChunkGenerator.CHUNK_SIZE + 1));
+                block = new Block(blockType, new Vector3(x - 1, y - 1, ChunkGenerator.CHUNK_SIZE + 1 - 1) * ChunkGenerator.CELL_SIZE);
             //the next chunk's cache of this block is at z = CHUNK_SIZE + 1
             chunks[newChunkPos].Item2.blocks[x, y, ChunkGenerator.CHUNK_SIZE + 1] = block;
             chunksPendingRegeneration.Add(newChunkPos);
@@ -268,7 +270,6 @@ public class MeshGenerator : MonoBehaviour
         Vector3 hitPoint = info.point;
         normal = info.normal;
         Vector3Int result;
-        print(hitPoint);
         if (normal.x > 0)
         {
             //px face
@@ -311,7 +312,7 @@ public class MeshGenerator : MonoBehaviour
             (int)Mathf.Floor(hitPoint.y / ChunkGenerator.CELL_SIZE),
             (int)Mathf.Floor(hitPoint.z / ChunkGenerator.CELL_SIZE + ChunkGenerator.H_CELL_SIZE));
         }
-        print($"Hits {hitPoint}. Block pos is {result}");
+        //print($"Hits {hitPoint}. Block pos is {result}");
         return result;
     }
 
@@ -320,12 +321,11 @@ public class MeshGenerator : MonoBehaviour
     {
         Vector2Int chunk = new Vector2Int((int)Mathf.Floor(x / ChunkGenerator.CELL_SIZE / ChunkGenerator.CHUNK_SIZE),
             (int)Mathf.Floor(z / ChunkGenerator.CELL_SIZE / ChunkGenerator.CHUNK_SIZE));
-        //formula that converts world block pos to chunk block pos is: (16 + (x % 16)) % 16
-        Vector2Int blockPosInChunk = BlockWorldPosToBlockChunkPos(new Vector2Int(x, z));
-        isOnChunkPXBorder = blockPosInChunk.x >= ChunkGenerator.CHUNK_SIZE - 1;
-        isOnChunkNXBorder = blockPosInChunk.x <= 0;
-        isOnChunkPZBorder = blockPosInChunk.y >= ChunkGenerator.CHUNK_SIZE - 1;
-        isOnChunkNZBorder = blockPosInChunk.y <= 0;
+        Vector3Int blockPosInChunk = BlockWorldPosToBlockChunkPos(new Vector3Int(x, y, z));
+        isOnChunkPXBorder = blockPosInChunk.x == ChunkGenerator.CHUNK_SIZE;
+        isOnChunkNXBorder = blockPosInChunk.x == 1;
+        isOnChunkPZBorder = blockPosInChunk.z == ChunkGenerator.CHUNK_SIZE;
+        isOnChunkNZBorder = blockPosInChunk.z == 1;
         return chunk;
     }
 }
